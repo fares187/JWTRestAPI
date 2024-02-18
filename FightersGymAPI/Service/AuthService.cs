@@ -1,10 +1,14 @@
-﻿using FightersGymAPI.Helper;
+﻿using FightersGymAPI.Const;
+using FightersGymAPI.Helper;
 using FightersGymAPI.Models;
+using FightersGymAPI.Models.added;
+using FightersGymAPI.ViewModel;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using NuGet.DependencyResolver;
 using NuGet.Packaging.Signing;
 using System.Diagnostics;
 using System.Formats.Asn1;
@@ -94,6 +98,7 @@ namespace FightersGymAPI.Service
             }
             await _userManager.AddToRoleAsync(user, "User");
             var jwtscuritytoken = await CreateJwtToken(user);
+            
             return new AuthModel()
             {
                 Email = user.Email,
@@ -104,6 +109,53 @@ namespace FightersGymAPI.Service
                 token = new JwtSecurityTokenHandler().WriteToken(jwtscuritytoken)
             };
         }
+
+        public async Task<AuthModel> RegisterMemberAsync(RegisterMemberModel model)
+        {
+            var auth = new AuthModel();
+
+
+            if (await _userManager.FindByNameAsync(model.UserName) is not null)
+            {
+                return new AuthModel { Massage = "This user name is already Registered" };
+            }
+            if (await _userManager.FindByEmailAsync(model.Email) is not null)
+            {
+                return new AuthModel { Massage = "This Email is already Registered" };
+            }
+            
+            var user = new Member()
+            {
+                UserName = model.UserName,
+                Email = model.Email,
+                Barcode = model.Barcode,
+                Address = model.Address,
+                BirthDate = model.BirthDate,
+                DaysLeft = model.DaysLeft,
+                Gender = model.Gender,
+                JoinDate = model.JoinDate,
+                FirstName = model.FirstName, LastName = model.LastName,
+                ProfilePic = model.ProfilePic,  
+                Phone = model.Phone,    
+                PhoneNumber = model.Phone,
+                
+            };
+            
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                auth.Massage = "Error occured while register !!";
+                return auth;
+            }
+            await _userManager.AddToRoleAsync(user,GymRoles.Trainee);
+            auth.IsAuthenticated = true;
+            auth.Email = user.Email;
+            auth.Username = user.UserName;
+
+            return auth;
+
+        }
         private async Task<JwtSecurityToken> CreateJwtToken(ApplicationUser user)
         {
             var userClaims = await _userManager.GetClaimsAsync(user);
@@ -111,7 +163,7 @@ namespace FightersGymAPI.Service
             var roleClaims = new List<Claim>();
 
             foreach (var role in roles)
-                roleClaims.Add(new Claim("roles", role));
+                roleClaims.Add(new Claim("Roles", role));
 
             var claims = new[]
             {

@@ -1,12 +1,14 @@
 ﻿using FightersGymAPI.Models;
 using FightersGymAPI.Service;
+using FightersGymAPI.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace FightersGymAPI.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
+   
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -25,15 +27,54 @@ namespace FightersGymAPI.Controllers
                 return BadRequest(result.Massage);    
             return Ok(result);
         }
-
-        [HttpPost("token")]
-        public async Task<IActionResult> getTokenAsync([FromBody] TokenRequestModel model)
+        [HttpPost("registerMember")]
+        public async Task<IActionResult> RegisterMemeberAsync([FromBody] RegisterMemberModel model)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                string ere = "";
+                foreach (var modelState in ModelState.Values)
+                {
+                    foreach (ModelError error in modelState.Errors)
+                    {
+                        ere += error.ErrorMessage + " ";
+                    }
+                }
+
+                return Ok(new AuthModel() { Massage = ere });
+
+            }
+            var result = await _authService.RegisterMemberAsync(model);
+            if (!result.IsAuthenticated)
+                return Ok(new AuthModel
+                {
+                    Massage = result.Massage
+                });
+            return Ok(result);
+        }
+
+        [HttpPost("token")]
+        public async Task<IActionResult> getTokenAsync([FromBody]  TokenRequestModel model)
+        {
+
+            if (!ModelState.IsValid)
+            {
+                string ere = "";
+                foreach (var modelState in ModelState.Values)
+                {
+                    foreach (ModelError error in modelState.Errors)
+                    {
+                        ere += error.ErrorMessage +" ";
+                    }
+                }
+                
+                return Ok(new AuthModel() { Massage = ere});
+
+            }
+               
             var result = await _authService.getTokenAsync(model);
             if (!result.IsAuthenticated)
-                return BadRequest(result.Massage);
+                return Ok(result);
             return Ok(result);
         }
 

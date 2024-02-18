@@ -1,4 +1,4 @@
-﻿namespace FightersGymAPI.Models
+﻿namespace FightersGymAPI.ViewModel
 {
     public class AddRoleModel
     {

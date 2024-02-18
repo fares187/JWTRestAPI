@@ -3,6 +3,7 @@ using System;
 using FightersGymAPI.data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FightersGymAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240214122946_addmissingKeys")]
+    partial class addmissingKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,7 +171,7 @@ namespace FightersGymAPI.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("ApplicationUserId")
+                    b.Property<string>("ApplicationUser")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -185,8 +188,6 @@ namespace FightersGymAPI.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ExpenseId");
-
-                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("CreatedBy");
 
@@ -246,6 +247,9 @@ namespace FightersGymAPI.Migrations
                     b.Property<int>("PlanID")
                         .HasColumnType("integer");
 
+                    b.Property<int>("PlanId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -254,7 +258,10 @@ namespace FightersGymAPI.Migrations
                     b.HasIndex("MemberId")
                         .IsUnique();
 
-                    b.HasIndex("PlanID");
+                    b.HasIndex("PlanID")
+                        .IsUnique();
+
+                    b.HasIndex("PlanId");
 
                     b.ToTable("MemberShips");
                 });
@@ -307,7 +314,8 @@ namespace FightersGymAPI.Migrations
                     b.Property<double>("Amount")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("CreatedById")
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Description")
@@ -324,13 +332,24 @@ namespace FightersGymAPI.Migrations
                     b.Property<int?>("ProductId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("produtId")
+                        .HasColumnType("integer");
+
                     b.HasKey("PaymentId");
 
-                    b.HasIndex("CreatedById");
+                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("MemberId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("produtId");
 
                     b.ToTable("Payments");
                 });
@@ -570,19 +589,11 @@ namespace FightersGymAPI.Migrations
 
             modelBuilder.Entity("FightersGymAPI.Models.added.Expenses", b =>
                 {
-                    b.HasOne("FightersGymAPI.Models.ApplicationUser", "ApplicationUser")
-                        .WithMany()
-                        .HasForeignKey("ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("FightersGymAPI.Models.ApplicationUser", null)
                         .WithMany("Expenses")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ApplicationUser");
                 });
 
             modelBuilder.Entity("FightersGymAPI.Models.added.Membership", b =>
@@ -593,9 +604,15 @@ namespace FightersGymAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FightersGymAPI.Models.added.Gymplan", null)
+                        .WithOne("Membership")
+                        .HasForeignKey("FightersGymAPI.Models.added.Membership", "PlanID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("FightersGymAPI.Models.added.Gymplan", "Plan")
-                        .WithMany("Membership")
-                        .HasForeignKey("PlanID")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -617,23 +634,35 @@ namespace FightersGymAPI.Migrations
 
             modelBuilder.Entity("FightersGymAPI.Models.added.Payment", b =>
                 {
-                    b.HasOne("FightersGymAPI.Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("FightersGymAPI.Models.ApplicationUser", null)
                         .WithMany("Payments")
-                        .HasForeignKey("CreatedById");
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("FightersGymAPI.Models.added.Member", "Member")
                         .WithMany()
                         .HasForeignKey("MemberId");
 
-                    b.HasOne("FightersGymAPI.Models.added.Product", "Product")
-                        .WithMany("Payments")
+                    b.HasOne("FightersGymAPI.Models.added.Product", "product")
+                        .WithMany()
                         .HasForeignKey("ProductId");
 
-                    b.Navigation("CreatedBy");
+                    b.HasOne("FightersGymAPI.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FightersGymAPI.Models.added.Product", null)
+                        .WithMany("Payments")
+                        .HasForeignKey("produtId");
 
                     b.Navigation("Member");
 
-                    b.Navigation("Product");
+                    b.Navigation("User");
+
+                    b.Navigation("product");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
